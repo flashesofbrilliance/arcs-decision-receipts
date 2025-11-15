@@ -1,0 +1,107 @@
+{
+  "name": "wayfinder-career-compass",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": ">=18 <23"
+  },
+  "description": "Wayfinder Career Compass — desktop/web app (Electron + Vite).",
+  "author": "Flashes of Brilliance",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "dev": "vite --config apps/wayfinder-web/vite.config.js || vite",
+    "build": "vite build --config apps/wayfinder-web/vite.config.js || vite build",
+    "preview": "vite preview --config apps/wayfinder-web/vite.config.js || vite preview",
+    "one:preview": "npm run build && (vite preview --config apps/wayfinder-web/vite.config.js || vite preview)",
+    "electron:dev": "node scripts/preflight.js electron-dev && concurrently -k \"vite --config apps/wayfinder-web/vite.config.js || vite\" \"cross-env ELECTRON_START_URL=http://localhost:5173 electron .\"",
+    "electron:dist": "node scripts/preflight.js electron-build && (npm run build || true) && node scripts/build-dmg.js",
+    "one:icons-build": "node scripts/preflight.js preview && (npm run build || true) && (open dist || true)",
+    "one:icons-electron": "node scripts/preflight.js electron-build && (npm run build || true) && node scripts/build-dmg.js",
+    "one:dmg": "node scripts/preflight.js electron-build && (npm run build || true) && node scripts/build-dmg.js",
+    "migrate:web": "bash scripts/migrate-web.sh",
+    "finalize:web-scripts": "node scripts/finalize-web-scripts.js"
+  },
+  "main": "apps/wayfinder-desktop/main.js",
+  "build": {
+    "appId": "com.flashes.wayfinder",
+    "productName": "Wayfinder Career Compass",
+    "electronVersion": "31.0.2",
+    "npmRebuild": false,
+    "files": [
+      "dist/**",
+      "apps/wayfinder-desktop/**",
+      "package.json",
+      "index.html",
+      "app.js",
+      "styles.css",
+      "tokens.css",
+      "assets/**",
+      "manifest.webmanifest",
+      "sw.js"
+    ],
+    "mac": { "category": "public.app-category.productivity", "target": ["dmg"] }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^31.0.2",
+    "electron-builder": "^24.13.3",
+    "@changesets/cli": "^2.29.7",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "eslint": "^9.38.0",
+    "gh-pages": "^6.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2",
+    "semantic-release": "^25.0.1",
+    "serve": "^14.2.1",
+    "turbo": "^2.5.8",
+    "vite": "^5.4.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/changelog",
+        {
+          "changelogFile": "CHANGELOG.md"
+        }
+      ],
+      
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "CHANGELOG.md",
+            "package.json",
+            "pnpm-lock.yaml"
+          ]
+        }
+      ]
+    ]
+  }
+}
