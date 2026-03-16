@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCS DEEP ACTIVATE PARTICIPANT</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black: #050505;
+  --green: #39ff14;
+  --magenta: #ff00ff;
+  --cyan: #00ffff;
+  --gold: #ffd700;
+  --dim-green: #0a3a06;
+  --glow-green: 0 0 8px #39ff14, 0 0 20px #39ff1466;
+  --glow-magenta: 0 0 8px #ff00ff, 0 0 20px #ff00ff66;
+  --glow-cyan: 0 0 8px #00ffff, 0 0 20px #00ffff66;
+  --glow-gold: 0 0 8px #ffd700, 0 0 20px #ffd70066;
+}
+
+body {
+  background: var(--black);
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 0 60px;
+  overflow-x: hidden;
+}
+
+/* ===== CRT OVERLAY ===== */
+#crt-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ===== CABINET ===== */
+#cabinet {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  position: relative;
+}
+
+/* ===== TITLE SCREEN ===== */
+#title-screen {
+  text-align: center;
+  padding: 36px 0 28px;
+  border-bottom: 1px solid #0f2a0f;
+  margin-bottom: 32px;
+}
+
+#title-screen h1 {
+  font-size: clamp(1.2rem, 3.5vw, 1.9rem);
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  letter-spacing: 3px;
+  line-height: 1.4;
+}
+
+#title-screen h1 .accent {
+  color: var(--magenta);
+  text-shadow: var(--glow-magenta);
+}
+
+.subtitle {
+  color: var(--green);
+  text-shadow: var(--glow-green);
+  font-size: 0.7rem;
+  letter-spacing: 5px;
+  margin-top: 12px;
+  opacity: 0.8;
+}
+
+.tagline {
+  color: #555;
+  font-size: 0.6rem;
+  margin-top: 18px;
+  letter-spacing: 2px;
+}
+
+/* ===== FORM GRID ===== */
+#form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  #form-grid { grid-template-columns: 1fr; }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.field-input {
+  background: #0a0a0a;
+  border: 1px solid #1a3a1a;
+  border-radius: 4px;
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  padding: 10px 12px;
+  outline: none;
+  text-shadow: 0 0 4px #39ff1444;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field-input:focus {
+  border-color: var(--green);
+  box-shadow: inset 0 0 20px #39ff1408, 0 0 10px #39ff1422;
+}
+
+.field-input::placeholder {
+  color: #1a5a1a;
+}
+
+/* ===== ARCHETYPE SELECTOR ===== */
+#archetype-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.archetype-btn {
+  background: transparent;
+  border: 1px solid #1a3a1a;
+  color: #2a7a2a;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  padding: 8px 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.archetype-btn:hover {
+  border-color: #2a5a2a;
+  color: var(--green);
+}
+
+.archetype-btn.selected {
+  border-color: var(--gold);
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  background: #1a1500;
+  box-shadow: 0 0 8px #ffd70022;
+}
+
+.archetype-name {
+  display: block;
+  font-weight: bold;
+}
+
+.archetype-tone {
+  display: block;
+  font-size: 0.58rem;
+  color: #555;
+  margin-top: 2px;
+}
+
+.archetype-btn.selected .archetype-tone {
+  color: #998800;
+}
+
+/* ===== CANON TEXTAREA ===== */
+#canon-area {
+  margin-bottom: 20px;
+}
+
+#canon-area label {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  margin-bottom: 8px;
+}
+
+#canon-input {
+  width: 100%;
+  min-height: 130px;
+  background: #0a0a0a;
+  border: 1px solid #1a3a1a;
+  border-radius: 4px;
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  padding: 14px;
+  resize: vertical;
+  outline: none;
+  text-shadow: 0 0 4px #39ff1444;
+}
+
+#canon-input:focus {
+  border-color: var(--green);
+  box-shadow: inset 0 0 20px #39ff1408, 0 0 10px #39ff1422;
+}
+
+#canon-input::placeholder {
+  color: #1a5a1a;
+}
+
+/* ===== ACTIVATE BUTTON ===== */
+#activate-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 16px 32px;
+  cursor: pointer;
+  text-shadow: var(--glow-gold);
+  box-shadow: var(--glow-gold), inset 0 0 20px #ffd70011;
+  transition: all 0.2s;
+  margin-bottom: 0;
+}
+
+#activate-btn:hover {
+  background: #1a1500;
+  box-shadow: 0 0 20px #ffd700, 0 0 50px #ffd70066, inset 0 0 30px #ffd70022;
+}
+
+#activate-btn:active { transform: scale(0.98); }
+#activate-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ===== TERMINAL ===== */
+#terminal-screen {
+  display: none;
+  margin-top: 32px;
+  background: #020802;
+  border: 3px solid #0f2a0f;
+  border-radius: 18px;
+  padding: 30px 24px;
+  position: relative;
+  box-shadow:
+    inset 0 0 80px #39ff1409,
+    inset 0 0 200px #00000088,
+    0 0 30px #39ff1411;
+  overflow: hidden;
+}
+
+#terminal-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at center, transparent 55%, #000000cc 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+#scan-output {
+  position: relative;
+  z-index: 2;
+  min-height: 60px;
+}
+
+#scan-output .scan-line {
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--green);
+  text-shadow: 0 0 6px #39ff1466;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#scan-output .scan-line.warn  { color: #ffaa00; text-shadow: 0 0 6px #ffaa0066; }
+#scan-output .scan-line.gold  { color: var(--gold); text-shadow: var(--glow-gold); }
+#scan-output .scan-line.done  { color: var(--cyan); text-shadow: var(--glow-cyan); }
+
+/* ===== RECEIPT ===== */
+#receipt {
+  display: none;
+  margin-top: 30px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 28px 24px;
+  position: relative;
+  box-shadow: var(--glow-gold), inset 0 0 40px #ffd70009;
+}
+
+#receipt-mode {
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: #998800;
+  margin-bottom: 10px;
+}
+
+#receipt-target {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--gold);
+  text-shadow: var(--glow-gold);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+#receipt-archetype {
+  font-size: 0.65rem;
+  color: #998800;
+  letter-spacing: 3px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2a2000;
+}
+
+#receipt-resonance {
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #cccccc;
+  margin-bottom: 24px;
+}
+
+#receipt-lexicon {
+  font-size: 0.72rem;
+  line-height: 1.9;
+  color: var(--green);
+  text-shadow: 0 0 4px #39ff1444;
+  margin-bottom: 22px;
+  padding: 14px;
+  background: #020a02;
+  border: 1px solid #0f2a0f;
+  border-radius: 4px;
+}
+
+#receipt-lexicon .lex-label {
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+#receipt-action {
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2000;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+#receipt-label {
+  font-size: 0.58rem;
+  letter-spacing: 4px;
+  color: #444;
+  text-align: center;
+  margin-top: 22px;
+}
+
+/* ===== RESONANCE BAR ===== */
+#resonance-bar-container {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+}
+
+#resonance-label {
+  font-size: 0.62rem;
+  letter-spacing: 3px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+#resonance-bar {
+  width: 100%;
+  height: 6px;
+  background: #111;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#resonance-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: var(--gold);
+  box-shadow: 0 0 10px #ffd700;
+  transition: width 1.8s ease-out;
+}
+
+/* ===== RESET ===== */
+#reset-btn {
+  display: none;
+  margin: 30px auto 0;
+  background: transparent;
+  border: 1px solid #333;
+  color: #555;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#reset-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* ===== FOOTER ===== */
+#footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 0.55rem;
+  color: #2a2a2a;
+  letter-spacing: 2px;
+  line-height: 2;
+}
+
+/* ===== FLICKER ===== */
+@keyframes flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.85; }
+  99% { opacity: 0.92; }
+}
+
+#terminal-screen.active { animation: flicker 4s infinite; }
+
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--green);
+  vertical-align: text-bottom;
+  animation: blink 0.7s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (max-width: 600px) {
+  #cabinet { padding: 12px; }
+  #terminal-screen { padding: 18px 14px; }
+  #receipt { padding: 18px 14px; }
+  #archetype-selector { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="crt-overlay"></div>
+
+<div id="cabinet">
+
+  <!-- TITLE -->
+  <div id="title-screen">
+    <h1>ARCS <span class="accent">DEEP ACTIVATE</span><br>PARTICIPANT MODE</h1>
+    <div class="subtitle">RHETORICAL RESONANCE ENGINE v1.0</div>
+    <div class="tagline">INGEST TARGET CANON &mdash; LOCK WAVELENGTH &mdash; TRIGGER THE HOLY SHIT MOMENT</div>
+  </div>
+
+  <!-- FORM -->
+  <div id="input-section">
+
+    <div id="form-grid">
+      <!-- Target Entity -->
+      <div class="field-group">
+        <span class="field-label">TARGET ENTITY</span>
+        <input
+          type="text"
+          id="target-input"
+          class="field-input"
+          placeholder="e.g. Acme Health System"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Archetype -->
+      <div class="field-group">
+        <span class="field-label">TARGET ARCHETYPE</span>
+        <div id="archetype-selector">
+          <button class="archetype-btn selected" data-archetype="institutionalist">
+            <span class="archetype-name">THE INSTITUTIONALIST</span>
+            <span class="archetype-tone">Gravitas · Process · Safety · Evidence</span>
+          </button>
+          <button class="archetype-btn" data-archetype="visionary">
+            <span class="archetype-name">THE VISIONARY</span>
+            <span class="archetype-tone">Disruption · Legacy · Velocity · Signal</span>
+          </button>
+          <button class="archetype-btn" data-archetype="operator">
+            <span class="archetype-name">THE OPERATOR</span>
+            <span class="archetype-tone">Throughput · Margin · Reliability · Proof</span>
+          </button>
+          <button class="archetype-btn" data-archetype="skeptic">
+            <span class="archetype-name">THE SKEPTIC</span>
+            <span class="archetype-tone">Risk · Precedent · Burden · Specificity</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canon Ingestion -->
+    <div id="canon-area">
+      <label>TARGET CANON — PASTE THEIR FRAMEWORKS, REPORTS, TALKING POINTS</label>
+      <textarea
+        id="canon-input"
+        placeholder="Paste the target's proprietary language here: annual reports, strategic frameworks, internal memos, published methodologies, website copy, keynote transcripts...&#10;&#10;The engine extracts their lexicon and mirrors it back. The Holy Shit Trigger fires when they hear their own brain talking."
+      ></textarea>
+    </div>
+
+    <button id="activate-btn">[ DEEP ACTIVATE PARTICIPANT ]</button>
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="terminal-screen">
+    <div id="scan-output"></div>
+  </div>
+
+  <!-- RESONANCE BAR -->
+  <div id="resonance-bar-container">
+    <div id="resonance-label">RHETORICAL RESONANCE INDEX</div>
+    <div id="resonance-bar"><div id="resonance-fill"></div></div>
+  </div>
+
+  <!-- RECEIPT -->
+  <div id="receipt">
+    <div id="receipt-mode">DEEP ACTIVATE PARTICIPANT — DECISION RECEIPT</div>
+    <div id="receipt-target"></div>
+    <div id="receipt-archetype"></div>
+    <div id="receipt-resonance"></div>
+    <div id="receipt-lexicon">
+      <span class="lex-label">EXTRACTED TARGET LEXICON — TOP SIGNAL TERMS</span>
+      <span id="lexicon-terms"></span>
+    </div>
+    <div id="receipt-action"></div>
+    <div id="receipt-label">ARCS DEEP ACTIVATE &mdash; FLASHES OF BRILLIANCE &mdash; ÉLEVÉ FLOW STATE</div>
+  </div>
+
+  <!-- RESET -->
+  <button id="reset-btn">[ NEW TARGET ]</button>
+
+  <!-- FOOTER -->
+  <div id="footer">
+    ARCS DECISION RECEIPTS &bull; FLASHES OF BRILLIANCE<br>
+    &copy; 2026 &mdash; THE HOLY SHIT MOMENT AWAITS
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── ARCHETYPE CONFIGS ────────────────────────────────────────────────────
+  const ARCHETYPES = {
+    institutionalist: {
+      label: 'THE INSTITUTIONALIST',
+      toneLock: 'Gravitas · Process · Safety · Evidence',
+      scanLines: [
+        { text: 'ARCHETYPE LOCK: INSTITUTIONALIST', cls: 'gold' },
+        { text: 'TONE CALIBRATION: GRAVITAS / PROCESS / SAFETY / EVIDENCE', cls: '' },
+        { text: 'SCANNING FOR GOVERNANCE LANGUAGE...', cls: '' },
+        { text: 'CROSS-REFERENCING ACCREDITATION SIGNALS...', cls: '' },
+        { text: 'EXTRACTING EVIDENCE-BASED LEXICON...', cls: '' },
+        { text: 'CHECKING STEWARDSHIP FRAMING...', cls: '' },
+        { text: 'CALIBRATING RISK-AVERSE RESONANCE VECTORS...', cls: 'warn' },
+        { text: 'INGESTING TARGET CANON...', cls: '' },
+        { text: 'BUILDING INTERNAL MIRROR...', cls: '' },
+        { text: 'THE HOLY SHIT MOMENT IS LOADING...', cls: 'gold' },
+      ],
+      resonanceOpening: 'The Institutionalist responds to process, provenance, and proof. They are not opposed to change — they are opposed to unmanaged risk. Your entry point is not disruption. Your entry point is stewardship.',
+      action: 'Lead with their own framework citation. Do not sell. Confirm. They already know the answer; make them hear it in their own voice.',
+    },
+    visionary: {
+      label: 'THE VISIONARY',
+      toneLock: 'Disruption · Legacy · Velocity · Signal',
+      scanLines: [
+        { text: 'ARCHETYPE LOCK: VISIONARY', cls: 'gold' },
+        { text: 'TONE CALIBRATION: DISRUPTION / LEGACY / VELOCITY / SIGNAL', cls: '' },
+        { text: 'SCANNING FOR NORTH STAR LANGUAGE...', cls: '' },
+        { text: 'DETECTING URGENCY COMPRESSION SIGNATURES...', cls: '' },
+        { text: 'EXTRACTING LEGACY-BUILDING LEXICON...', cls: '' },
+        { text: 'MEASURING SPEED-TO-VISION DELTA...', cls: '' },
+        { text: 'WARNING: EGO LOAD HIGH — CALIBRATING...', cls: 'warn' },
+        { text: 'INGESTING TARGET CANON...', cls: '' },
+        { text: 'BUILDING INTERNAL MIRROR...', cls: '' },
+        { text: 'THE HOLY SHIT MOMENT IS LOADING...', cls: 'gold' },
+      ],
+      resonanceOpening: 'The Visionary moves toward a future only they can fully see. They do not need to be convinced — they need to be confirmed. Your job is not to explain the destination. Your job is to be the vehicle that makes their vision inevitable.',
+      action: 'Open with the sentence they have been trying to say for three years. They will finish it for you. That is the moment.',
+    },
+    operator: {
+      label: 'THE OPERATOR',
+      toneLock: 'Throughput · Margin · Reliability · Proof',
+      scanLines: [
+        { text: 'ARCHETYPE LOCK: OPERATOR', cls: 'gold' },
+        { text: 'TONE CALIBRATION: THROUGHPUT / MARGIN / RELIABILITY / PROOF', cls: '' },
+        { text: 'SCANNING FOR EFFICIENCY METRICS...', cls: '' },
+        { text: 'DETECTING UNIT ECONOMICS LANGUAGE...', cls: '' },
+        { text: 'EXTRACTING OPERATIONAL LEXICON...', cls: '' },
+        { text: 'MEASURING PROOF-DENSITY REQUIREMENT...', cls: '' },
+        { text: 'CAUTION: BULLSHIT TOLERANCE: NEAR ZERO', cls: 'warn' },
+        { text: 'INGESTING TARGET CANON...', cls: '' },
+        { text: 'BUILDING INTERNAL MIRROR...', cls: '' },
+        { text: 'THE HOLY SHIT MOMENT IS LOADING...', cls: 'gold' },
+      ],
+      resonanceOpening: 'The Operator has already done the math. They are looking for confirmation that you have done it too. Abstract value propositions cause physical discomfort. Bring numbers. Bring comparables. Bring specificity.',
+      action: 'State the ROI in the first 90 seconds, in their units. Everything else is noise until that number lands.',
+    },
+    skeptic: {
+      label: 'THE SKEPTIC',
+      toneLock: 'Risk · Precedent · Burden · Specificity',
+      scanLines: [
+        { text: 'ARCHETYPE LOCK: SKEPTIC', cls: 'gold' },
+        { text: 'TONE CALIBRATION: RISK / PRECEDENT / BURDEN / SPECIFICITY', cls: '' },
+        { text: 'SCANNING FOR OBJECTION PRE-FORMATION...', cls: '' },
+        { text: 'DETECTING CREDIBILITY GATEKEEPING SIGNALS...', cls: '' },
+        { text: 'EXTRACTING BURDEN-OF-PROOF LEXICON...', cls: '' },
+        { text: 'MAPPING KNOWN FAILURE MODES...', cls: '' },
+        { text: 'ALERT: TRUST DEFICIT — DO NOT OVERSELL', cls: 'warn' },
+        { text: 'INGESTING TARGET CANON...', cls: '' },
+        { text: 'BUILDING INTERNAL MIRROR...', cls: '' },
+        { text: 'THE HOLY SHIT MOMENT IS LOADING...', cls: 'gold' },
+      ],
+      resonanceOpening: 'The Skeptic is not the enemy. They are the highest-signal participant in the room. Their objections are free consulting. The move is not to overcome their resistance — it is to demonstrate that you already thought of it.',
+      action: 'State their most likely objection before they do. Watch the resistance collapse. The Skeptic becomes your fiercest internal champion when they feel understood, not sold.',
+    },
+  };
+
+  // ─── LEXICON EXTRACTION ───────────────────────────────────────────────────
+
+  // Common English stopwords to filter out
+  const STOPWORDS = new Set([
+    'the','a','an','and','or','but','in','on','at','to','for','of','with',
+    'by','from','is','are','was','were','be','been','being','have','has',
+    'had','do','does','did','will','would','could','should','may','might',
+    'shall','can','need','that','this','these','those','it','its','we','our',
+    'us','you','your','they','their','them','he','she','his','her','i','my',
+    'me','as','if','not','no','so','up','out','about','into','than','then',
+    'also','more','some','all','any','each','there','what','which','who',
+    'when','where','how','why','such','through','after','before','between',
+  ]);
+
+  function extractLexicon(text, k = 10) {
+    if (!text.trim()) return [];
+    const words = text.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !STOPWORDS.has(w));
+
+    const freq = {};
+    for (const w of words) freq[w] = (freq[w] || 0) + 1;
+
+    return Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, k)
+      .map(([word]) => word.toUpperCase());
+  }
+
+  // ─── RESONANCE SCORE ──────────────────────────────────────────────────────
+
+  function canonScore(text) {
+    if (!text.trim()) return 0.3;
+    const words = text.trim().split(/\s+/).length;
+    const unique = new Set(text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/)).size;
+    const lenFactor  = Math.min(words / 300, 1);
+    const divFactor  = words > 0 ? Math.min(unique / words + 0.2, 1) : 0;
+    const raw = lenFactor * 0.5 + divFactor * 0.4 + 0.1;
+    return Math.max(0.35, Math.min(0.98, raw));
+  }
+
+  // ─── DOM HELPERS ──────────────────────────────────────────────────────────
+
+  const $ = (sel) => document.querySelector(sel);
+
+  function typeText(el, text, delay) {
+    return new Promise((resolve) => {
+      let i = 0;
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      el.appendChild(cursor);
+      function tick() {
+        if (i < text.length) {
+          cursor.before(document.createTextNode(text[i++]));
+          setTimeout(tick, delay);
+        } else {
+          cursor.remove();
+          resolve();
+        }
+      }
+      tick();
+    });
+  }
+
+  async function printLine(text, cls) {
+    const output = $('#scan-output');
+    const line   = document.createElement('div');
+    line.className = 'scan-line' + (cls ? ' ' + cls : '');
+    output.appendChild(line);
+    await typeText(line, '> ' + text, 28);
+    const term = $('#terminal-screen');
+    term.scrollTop = term.scrollHeight;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ─── MAIN SEQUENCE ────────────────────────────────────────────────────────
+
+  async function runActivation() {
+    const target    = $('#target-input').value.trim();
+    const canon     = $('#canon-input').value.trim();
+    const archetypeKey = document.querySelector('.archetype-btn.selected')?.dataset.archetype || 'institutionalist';
+    const archetype = ARCHETYPES[archetypeKey];
+
+    if (!target) {
+      $('#target-input').focus();
+      $('#target-input').style.borderColor = '#ff3333';
+      setTimeout(() => { $('#target-input').style.borderColor = ''; }, 1500);
+      return;
+    }
+
+    $('#activate-btn').disabled = true;
+    $('#input-section').style.opacity = '0.3';
+    $('#input-section').style.pointerEvents = 'none';
+
+    // Show terminal
+    const terminal = $('#terminal-screen');
+    terminal.style.display = 'block';
+    terminal.classList.add('active');
+    $('#scan-output').innerHTML = '';
+
+    // Scan lines
+    for (const line of archetype.scanLines) {
+      await printLine(line.text, line.cls);
+      await sleep(350 + Math.random() * 250);
+    }
+
+    // Canon ingestion feedback
+    if (canon.length > 0) {
+      await sleep(300);
+      const wordCount = canon.split(/\s+/).filter(Boolean).length;
+      await printLine(`CANON INGESTED: ${wordCount} WORDS — VECTOR INDEX BUILT`, 'done');
+    } else {
+      await sleep(300);
+      await printLine('WARNING: NO CANON PROVIDED — RUNNING ON ARCHETYPAL DEFAULTS', 'warn');
+    }
+
+    await sleep(500);
+
+    const score    = canonScore(canon);
+    const lexicon  = extractLexicon(canon);
+
+    await printLine('RHETORICAL RESONANCE INDEX: ' + score.toFixed(4), 'done');
+    await sleep(400);
+    await printLine('HOLY SHIT TRIGGER: ARMED', 'gold');
+    await sleep(700);
+
+    terminal.classList.remove('active');
+
+    showReceipt(target, archetype, score, lexicon, archetypeKey);
+  }
+
+  function showReceipt(target, archetype, score, lexicon, archetypeKey) {
+    const receipt = $('#receipt');
+
+    $('#receipt-target').textContent = target.toUpperCase();
+    $('#receipt-archetype').textContent =
+      archetype.label + ' — ' + archetype.toneLock;
+
+    $('#receipt-resonance').innerHTML =
+      '<strong style="color:#998800;font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:10px;">RESONANCE PROFILE</strong>' +
+      archetype.resonanceOpening;
+
+    if (lexicon.length > 0) {
+      $('#lexicon-terms').textContent = lexicon.join(' · ');
+      $('#receipt-lexicon').style.display = 'block';
+    } else {
+      $('#receipt-lexicon').style.display = 'none';
+    }
+
+    $('#receipt-action').textContent = '> ' + archetype.action;
+
+    receipt.style.display = 'block';
+
+    // Resonance bar
+    $('#resonance-bar-container').style.display = 'block';
+    requestAnimationFrame(() => {
+      $('#resonance-fill').style.width = Math.round(score * 100) + '%';
+    });
+
+    $('#reset-btn').style.display = 'block';
+  }
+
+  // ─── RESET ───────────────────────────────────────────────────────────────
+
+  function resetMachine() {
+    $('#terminal-screen').style.display = 'none';
+    $('#terminal-screen').classList.remove('active');
+    $('#scan-output').innerHTML = '';
+    $('#receipt').style.display = 'none';
+    $('#resonance-bar-container').style.display = 'none';
+    $('#resonance-fill').style.width = '0%';
+    $('#reset-btn').style.display = 'none';
+    $('#input-section').style.opacity = '1';
+    $('#input-section').style.pointerEvents = 'auto';
+    $('#activate-btn').disabled = false;
+    $('#target-input').value = '';
+    $('#canon-input').value = '';
+    $('#target-input').focus();
+  }
+
+  // ─── ARCHETYPE SELECTION ─────────────────────────────────────────────────
+
+  document.querySelectorAll('.archetype-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.archetype-btn').forEach(b => b.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // ─── BINDINGS ────────────────────────────────────────────────────────────
+
+  $('#activate-btn').addEventListener('click', runActivation);
+  $('#reset-btn').addEventListener('click', resetMachine);
+
+  $('#canon-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!$('#activate-btn').disabled) runActivation();
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
