@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEAN-CLAUDE &amp; THE LA FORCE FIELD</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black: #050505;
+  --green: #39ff14;
+  --magenta: #ff00ff;
+  --cyan: #00ffff;
+  --dim-green: #0a3a06;
+  --glow-green: 0 0 8px #39ff14, 0 0 20px #39ff1466;
+  --glow-magenta: 0 0 8px #ff00ff, 0 0 20px #ff00ff66;
+  --glow-cyan: 0 0 8px #00ffff, 0 0 20px #00ffff66;
+}
+
+body {
+  background: var(--black);
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* ===== CRT OVERLAY ===== */
+#crt-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ===== CABINET ===== */
+#cabinet {
+  width: 100%;
+  max-width: 760px;
+  padding: 20px;
+  position: relative;
+}
+
+/* ===== TITLE SCREEN ===== */
+#title-screen {
+  text-align: center;
+  padding: 40px 0;
+}
+
+#title-screen h1 {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  letter-spacing: 3px;
+  line-height: 1.4;
+}
+
+#title-screen h1 .accent {
+  color: var(--magenta);
+  text-shadow: var(--glow-magenta);
+}
+
+.subtitle {
+  color: var(--green);
+  text-shadow: var(--glow-green);
+  font-size: 0.75rem;
+  letter-spacing: 6px;
+  margin-top: 12px;
+  opacity: 0.8;
+}
+
+.tagline {
+  color: #888;
+  font-size: 0.65rem;
+  margin-top: 24px;
+  letter-spacing: 2px;
+}
+
+/* ===== INPUT AREA ===== */
+#input-section {
+  margin-top: 30px;
+}
+
+#input-section label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#project-input {
+  width: 100%;
+  min-height: 120px;
+  background: #0a0a0a;
+  border: 1px solid #1a3a1a;
+  border-radius: 4px;
+  color: var(--green);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  padding: 14px;
+  resize: vertical;
+  outline: none;
+  text-shadow: 0 0 4px #39ff1444;
+}
+
+#project-input:focus {
+  border-color: var(--green);
+  box-shadow: inset 0 0 20px #39ff1408, 0 0 10px #39ff1422;
+}
+
+#project-input::placeholder {
+  color: #1a5a1a;
+}
+
+/* ===== COIN BUTTON ===== */
+#coin-btn {
+  display: block;
+  margin: 28px auto 0;
+  background: transparent;
+  border: 2px solid var(--magenta);
+  color: var(--magenta);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 14px 32px;
+  cursor: pointer;
+  text-shadow: var(--glow-magenta);
+  box-shadow: var(--glow-magenta), inset 0 0 20px #ff00ff11;
+  transition: all 0.2s;
+}
+
+#coin-btn:hover {
+  background: #ff00ff18;
+  box-shadow: 0 0 16px #ff00ff, 0 0 40px #ff00ff66, inset 0 0 30px #ff00ff22;
+}
+
+#coin-btn:active {
+  transform: scale(0.97);
+}
+
+#coin-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ===== CRT TERMINAL ===== */
+#terminal-screen {
+  display: none;
+  margin-top: 36px;
+  background: #020802;
+  border: 3px solid #0f2a0f;
+  border-radius: 18px;
+  padding: 30px 24px;
+  position: relative;
+  box-shadow:
+    inset 0 0 80px #39ff1409,
+    inset 0 0 200px #00000088,
+    0 0 30px #39ff1411;
+  overflow: hidden;
+}
+
+/* CRT curvature vignette */
+#terminal-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at center, transparent 55%, #000000cc 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+#scan-output {
+  position: relative;
+  z-index: 2;
+  min-height: 60px;
+}
+
+#scan-output .scan-line {
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--green);
+  text-shadow: 0 0 6px #39ff1466;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#scan-output .scan-line.warn {
+  color: #ffaa00;
+  text-shadow: 0 0 6px #ffaa0066;
+}
+
+#scan-output .scan-line.done {
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+/* ===== CLAW ===== */
+#claw-container {
+  display: none;
+  position: relative;
+  width: 100%;
+  height: 180px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+#claw {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -100px;
+  transition: top 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#claw.drop {
+  top: 20px;
+}
+
+#claw.retract {
+  top: -100px;
+  transition: top 1.2s cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+/* Claw arm */
+.claw-arm {
+  width: 4px;
+  height: 80px;
+  background: var(--cyan);
+  margin: 0 auto;
+  box-shadow: var(--glow-cyan);
+}
+
+/* Claw head */
+.claw-head {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+}
+
+.claw-finger {
+  width: 20px;
+  height: 30px;
+  border: 3px solid var(--cyan);
+  border-top: none;
+  box-shadow: var(--glow-cyan);
+}
+
+.claw-finger.left {
+  border-radius: 0 0 0 12px;
+  border-right: none;
+  transform: rotate(-8deg);
+  transform-origin: top right;
+}
+
+.claw-finger.right {
+  border-radius: 0 0 12px 0;
+  border-left: none;
+  transform: rotate(8deg);
+  transform-origin: top left;
+}
+
+#claw.drop .claw-finger.left {
+  transform: rotate(-25deg);
+  transition: transform 0.4s 1.6s;
+}
+
+#claw.drop .claw-finger.right {
+  transform: rotate(25deg);
+  transition: transform 0.4s 1.6s;
+}
+
+#claw.retract .claw-finger.left {
+  transform: rotate(-4deg);
+  transition: transform 0.3s;
+}
+
+#claw.retract .claw-finger.right {
+  transform: rotate(4deg);
+  transition: transform 0.3s;
+}
+
+/* ===== RECEIPT ===== */
+#receipt {
+  display: none;
+  margin-top: 30px;
+  border: 2px solid;
+  border-radius: 6px;
+  padding: 28px 24px;
+  position: relative;
+}
+
+#receipt.doa {
+  border-color: #ff3333;
+  box-shadow: 0 0 20px #ff333344, inset 0 0 40px #ff333309;
+}
+
+#receipt.soulless {
+  border-color: #ffaa00;
+  box-shadow: 0 0 20px #ffaa0044, inset 0 0 40px #ffaa0009;
+}
+
+#receipt.laforce {
+  border-color: var(--magenta);
+  box-shadow: var(--glow-magenta), inset 0 0 40px #ff00ff09;
+}
+
+#receipt-header {
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+.doa #receipt-header { color: #ff3333; text-shadow: 0 0 8px #ff3333; }
+.soulless #receipt-header { color: #ffaa00; text-shadow: 0 0 8px #ffaa00; }
+.laforce #receipt-header { color: var(--magenta); text-shadow: var(--glow-magenta); }
+
+#receipt-body {
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #cccccc;
+  margin-bottom: 22px;
+}
+
+#receipt-action {
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.doa #receipt-action { color: #ff3333; }
+.soulless #receipt-action { color: #ffaa00; }
+.laforce #receipt-action { color: var(--cyan); text-shadow: var(--glow-cyan); }
+
+#receipt-label {
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: #555;
+  text-align: center;
+  margin-top: 22px;
+}
+
+/* ===== SCORE BAR ===== */
+#score-bar-container {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+}
+
+#score-label {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+#score-bar {
+  width: 100%;
+  height: 6px;
+  background: #111;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#score-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  transition: width 1.5s ease-out;
+}
+
+#score-fill.doa { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
+#score-fill.soulless { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
+#score-fill.laforce { background: var(--magenta); box-shadow: 0 0 10px #ff00ff; }
+
+/* ===== RESET BUTTON ===== */
+#reset-btn {
+  display: none;
+  margin: 30px auto 0;
+  background: transparent;
+  border: 1px solid #333;
+  color: #555;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#reset-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* ===== FOOTER ===== */
+#footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 0.55rem;
+  color: #2a2a2a;
+  letter-spacing: 2px;
+  line-height: 2;
+}
+
+/* ===== FLICKER ANIMATION ===== */
+@keyframes flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.85; }
+  99% { opacity: 0.92; }
+}
+
+#terminal-screen.active {
+  animation: flicker 4s infinite;
+}
+
+/* ===== CURSOR BLINK ===== */
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--green);
+  vertical-align: text-bottom;
+  animation: blink 0.7s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  #cabinet { padding: 12px; }
+  #terminal-screen { padding: 18px 14px; }
+  #receipt { padding: 18px 14px; }
+}
+</style>
+</head>
+<body>
+
+<div id="crt-overlay"></div>
+
+<div id="cabinet">
+
+  <!-- TITLE -->
+  <div id="title-screen">
+    <h1>JEAN-CLAUDE<br>&amp; THE <span class="accent">LA FORCE</span> FIELD</h1>
+    <div class="subtitle">VOIGHT-KAMPFF FOR CORPORATE PROJECTS</div>
+    <div class="tagline">ARCS KINEMATIC MANIFOLD v8.5 &mdash; PLASMA STATE DIAGNOSTICS</div>
+  </div>
+
+  <!-- INPUT -->
+  <div id="input-section">
+    <label>SUBMIT PROJECT IDEA / SLACK THREAD / STARTUP PITCH</label>
+    <textarea id="project-input" placeholder="Paste your project idea, Slack thread, or startup pitch here...&#10;&#10;The Claw sees all. The Claw judges all."></textarea>
+    <button id="coin-btn">[ INSERT COIN / TEST VITALITY ]</button>
+  </div>
+
+  <!-- TERMINAL -->
+  <div id="terminal-screen">
+    <div id="scan-output"></div>
+  </div>
+
+  <!-- CLAW -->
+  <div id="claw-container">
+    <div id="claw">
+      <div class="claw-arm"></div>
+      <div class="claw-head">
+        <div class="claw-finger left"></div>
+        <div class="claw-finger right"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCORE BAR -->
+  <div id="score-bar-container">
+    <div id="score-label">LA FORCE INDEX</div>
+    <div id="score-bar"><div id="score-fill"></div></div>
+  </div>
+
+  <!-- RECEIPT -->
+  <div id="receipt">
+    <div id="receipt-header"></div>
+    <div id="receipt-body"></div>
+    <div id="receipt-action"></div>
+    <div id="receipt-label">COHERENCE RECEIPT &mdash; JEAN-CLAUDE DIAGNOSTICS</div>
+  </div>
+
+  <!-- RESET -->
+  <button id="reset-btn">[ INSERT ANOTHER COIN ]</button>
+
+  <!-- FOOTER -->
+  <div id="footer">
+    ARCS DECISION RECEIPTS &bull; FLASHES OF BRILLIANCE<br>
+    &copy; 2026 &mdash; THE CLAW REMEMBERS
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const SCAN_LINES = [
+    { text: 'INITIALIZING KINEMATIC MANIFOLD...', cls: '' },
+    { text: 'PINGING GROK FOR REAL-TIME FIELD SENTIMENT...', cls: '' },
+    { text: 'CALCULATING TELIC SIGNAL SCORE...', cls: '' },
+    { text: 'CHECKING FOR ATRIAL FIBRILLATION (AFIB)...', cls: 'warn' },
+    { text: 'SCANNING FOR \u00c9LAN VITAL...', cls: '' },
+    { text: 'MEASURING DEAD LOAD ACCUMULATION...', cls: '' },
+    { text: 'WARNING: DIESEL RUNAWAY SCANNERS ACTIVE...', cls: 'warn' },
+    { text: 'ASSESSING LA FORCE INDEX...', cls: 'done' }
+  ];
+
+  const OUTCOMES = {
+    doa: {
+      header: 'CORPSE DETECTED: PURE STOCHASTIC STUMBLING',
+      body: 'Non. You are running from pain. There is no magnetic north here, only the fear of stopping. The velocity is high, but the coherence is zero. You are in Diesel Runaway, burning sunk cost to stay warm. The Claw grabs nothing. Fatality.',
+      action: 'MANDATORY PLI\u00c9. Stop moving. Find the Telos or bury the project.'
+    },
+    soulless: {
+      header: 'FUNCTIONAL, BUT DEAD.',
+      body: 'It is not wrong. But it is not alive. You have optimized for zero friction, and therefore generated zero heat. The structure is unhardened. \u00c9lan Dusk would execute this, but Jean-Claude weeps. The Claw retrieves a beige cube.',
+      action: 'Introduce live load. Go stand barefoot in 31-degree wind.'
+    },
+    laforce: {
+      header: 'COHERENCE 1.0: THE UNIFIED FIELD',
+      body: 'Oui. The structure is hardened. The yield is perfect. The sentence is completing itself. The Invisible Hand is pulling. You are running Anti-Stochastic Gradient Ascent. The Claw touches the project and melts into the void.',
+      action: 'Your wish is granted. But you are not ready for it. Do not interrupt the flow. The void has been notified.'
+    }
+  };
+
+  const $ = (sel) => document.querySelector(sel);
+
+  // Shannon entropy of a string
+  function entropy(str) {
+    if (!str.length) return 0;
+    const freq = {};
+    for (const ch of str) freq[ch] = (freq[ch] || 0) + 1;
+    const len = str.length;
+    let h = 0;
+    for (const ch in freq) {
+      const p = freq[ch] / len;
+      h -= p * Math.log2(p);
+    }
+    return h;
+  }
+
+  // Simple hash to add deterministic noise
+  function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+  }
+
+  // Calculate vitality score [0, 1]
+  function calculateScore(input) {
+    const trimmed = input.trim();
+    if (!trimmed.length) return 0;
+
+    const len = trimmed.length;
+    const words = trimmed.split(/\s+/).filter(Boolean).length;
+    const uniqueWords = new Set(trimmed.toLowerCase().split(/\s+/).filter(Boolean)).size;
+    const e = entropy(trimmed);
+    const hash = simpleHash(trimmed);
+
+    // Length factor: rewards longer inputs, diminishing returns
+    const lenFactor = Math.min(len / 500, 1);
+
+    // Word diversity factor
+    const diversityFactor = words > 0 ? uniqueWords / words : 0;
+
+    // Entropy factor: normalized (max realistic entropy ~5 bits for English text)
+    const entropyFactor = Math.min(e / 5, 1);
+
+    // Hash jitter: small deterministic noise +-0.08
+    const jitter = ((hash % 160) - 80) / 1000;
+
+    const raw = (lenFactor * 0.35) + (diversityFactor * 0.25) + (entropyFactor * 0.35) + jitter + 0.05;
+
+    return Math.max(0, Math.min(1, raw));
+  }
+
+  function classify(score) {
+    if (score < 0.4) return 'doa';
+    if (score > 0.85) return 'laforce';
+    return 'soulless';
+  }
+
+  // Type text character by character
+  function typeText(element, text, charDelay) {
+    return new Promise((resolve) => {
+      let i = 0;
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      element.appendChild(cursor);
+
+      function tick() {
+        if (i < text.length) {
+          cursor.before(document.createTextNode(text[i]));
+          i++;
+          setTimeout(tick, charDelay);
+        } else {
+          cursor.remove();
+          resolve();
+        }
+      }
+      tick();
+    });
+  }
+
+  // Print a scan line with typing effect
+  async function printScanLine(text, cls) {
+    const output = $('#scan-output');
+    const line = document.createElement('div');
+    line.className = 'scan-line' + (cls ? ' ' + cls : '');
+    output.appendChild(line);
+    await typeText(line, '> ' + text, 30);
+    // Scroll terminal
+    const terminal = $('#terminal-screen');
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  // Drop the claw
+  async function dropClaw() {
+    const container = $('#claw-container');
+    const claw = $('#claw');
+    container.style.display = 'block';
+    claw.className = '';
+
+    await sleep(100);
+    claw.classList.add('drop');
+    await sleep(2200);
+    claw.classList.remove('drop');
+    claw.classList.add('retract');
+    await sleep(1400);
+  }
+
+  // Show result receipt
+  function showReceipt(score, tier) {
+    const outcome = OUTCOMES[tier];
+    const receipt = $('#receipt');
+    const scoreFill = $('#score-fill');
+
+    receipt.className = tier;
+    receipt.style.display = 'block';
+    $('#receipt-header').textContent = outcome.header;
+    $('#receipt-body').textContent = outcome.body;
+    $('#receipt-action').textContent = '> ' + outcome.action;
+
+    // Score bar
+    $('#score-bar-container').style.display = 'block';
+    scoreFill.className = tier;
+    requestAnimationFrame(() => {
+      scoreFill.style.width = Math.round(score * 100) + '%';
+    });
+
+    $('#reset-btn').style.display = 'block';
+  }
+
+  // Main sequence
+  async function runScan() {
+    const input = $('#project-input').value;
+    if (!input.trim()) return;
+
+    const btn = $('#coin-btn');
+    btn.disabled = true;
+
+    // Show terminal
+    const terminal = $('#terminal-screen');
+    terminal.style.display = 'block';
+    terminal.classList.add('active');
+    $('#scan-output').innerHTML = '';
+
+    // Fade input section
+    $('#input-section').style.opacity = '0.3';
+    $('#input-section').style.pointerEvents = 'none';
+
+    // Run scan lines
+    for (const line of SCAN_LINES) {
+      await printScanLine(line.text, line.cls);
+      await sleep(400 + Math.random() * 300);
+    }
+
+    // Final pause
+    await sleep(600);
+
+    const score = calculateScore(input);
+    const tier = classify(score);
+
+    // Print score
+    const scoreText = 'LA FORCE INDEX: ' + score.toFixed(4);
+    await printScanLine(scoreText, 'done');
+    await sleep(500);
+
+    const verdictText = 'VERDICT: ' + tier.toUpperCase().replace('DOA', 'D.O.A.').replace('SOULLESS', 'SOULLESS COMPETENCE').replace('LAFORCE', 'LA FORCE');
+    await printScanLine(verdictText, 'done');
+    await sleep(800);
+
+    // Drop claw
+    await dropClaw();
+
+    // Show receipt
+    showReceipt(score, tier);
+
+    terminal.classList.remove('active');
+  }
+
+  // Reset
+  function resetMachine() {
+    $('#terminal-screen').style.display = 'none';
+    $('#terminal-screen').classList.remove('active');
+    $('#scan-output').innerHTML = '';
+    $('#claw-container').style.display = 'none';
+    $('#claw').className = '';
+    $('#receipt').style.display = 'none';
+    $('#receipt').className = '';
+    $('#score-bar-container').style.display = 'none';
+    $('#score-fill').style.width = '0%';
+    $('#reset-btn').style.display = 'none';
+    $('#input-section').style.opacity = '1';
+    $('#input-section').style.pointerEvents = 'auto';
+    $('#coin-btn').disabled = false;
+    $('#project-input').value = '';
+    $('#project-input').focus();
+  }
+
+  // Bind events
+  $('#coin-btn').addEventListener('click', runScan);
+  $('#reset-btn').addEventListener('click', resetMachine);
+
+  // Allow Ctrl+Enter to submit
+  $('#project-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!$('#coin-btn').disabled) runScan();
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
