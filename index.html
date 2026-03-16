@@ -12,11 +12,14 @@
   --green: #39ff14;
   --magenta: #ff00ff;
   --cyan: #00ffff;
-  --dim-green: #0a3a06;
+  --amber: #ffaa00;
+  --red: #ff3333;
   --glow-green: 0 0 8px #39ff14, 0 0 20px #39ff1466;
   --glow-magenta: 0 0 8px #ff00ff, 0 0 20px #ff00ff66;
   --glow-cyan: 0 0 8px #00ffff, 0 0 20px #00ffff66;
 }
+
+html, body { height: 100%; }
 
 body {
   background: var(--black);
@@ -26,11 +29,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   overflow-x: hidden;
+  padding-bottom: 60px;
 }
 
-/* ===== CRT OVERLAY ===== */
+/* ===== CRT OVERLAY - static scanlines ===== */
 #crt-overlay {
   pointer-events: none;
   position: fixed;
@@ -38,35 +41,81 @@ body {
   z-index: 9999;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
+    rgba(0,0,0,0.18) 0px,
+    rgba(0,0,0,0.18) 1px,
     transparent 1px,
     transparent 3px
   );
 }
 
+/* ===== MOVING PHOSPHOR SCAN BEAM ===== */
+#scan-beam {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(57,255,20,0.025) 50%,
+    transparent 100%
+  );
+  background-size: 100% 300px;
+  animation: scanBeam 10s linear infinite;
+}
+@keyframes scanBeam {
+  from { background-position: 0 -300px; }
+  to   { background-position: 0 100vh; }
+}
+
+/* ===== GLOBAL DARKENING ===== */
+#screen-darken {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(0,0,0,0);
+  transition: background 0.8s ease;
+}
+#screen-darken.active { background: rgba(0,0,0,0.72); }
+
+/* ===== SCREEN FLASH ===== */
+#flash-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  background: transparent;
+}
+@keyframes screenFlash {
+  0%   { background: rgba(255,0,255,0); }
+  8%   { background: rgba(255,0,255,0.18); }
+  100% { background: rgba(255,0,255,0); }
+}
+#flash-overlay.flash { animation: screenFlash 0.7s ease-out forwards; }
+
 /* ===== CABINET ===== */
 #cabinet {
   width: 100%;
-  max-width: 760px;
-  padding: 20px;
+  max-width: 800px;
+  padding: 24px 20px;
   position: relative;
+  z-index: 1;
 }
 
 /* ===== TITLE SCREEN ===== */
 #title-screen {
   text-align: center;
-  padding: 40px 0;
+  padding: 44px 0 20px;
 }
 
 #title-screen h1 {
-  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-size: clamp(1.3rem, 4vw, 2.1rem);
   color: var(--cyan);
   text-shadow: var(--glow-cyan);
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   line-height: 1.4;
 }
-
 #title-screen h1 .accent {
   color: var(--magenta);
   text-shadow: var(--glow-magenta);
@@ -75,39 +124,42 @@ body {
 .subtitle {
   color: var(--green);
   text-shadow: var(--glow-green);
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   letter-spacing: 6px;
   margin-top: 12px;
   opacity: 0.8;
 }
-
 .tagline {
-  color: #888;
-  font-size: 0.65rem;
-  margin-top: 24px;
-  letter-spacing: 2px;
+  color: #444;
+  font-size: 0.58rem;
+  margin-top: 16px;
+  letter-spacing: 3px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #181818;
+  margin: 24px 0;
 }
 
 /* ===== INPUT AREA ===== */
-#input-section {
-  margin-top: 30px;
-}
+#input-section { transition: opacity 0.5s; }
 
 #input-section label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   color: var(--cyan);
   text-shadow: var(--glow-cyan);
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   margin-bottom: 10px;
   text-align: center;
 }
 
 #project-input {
   width: 100%;
-  min-height: 120px;
-  background: #0a0a0a;
-  border: 1px solid #1a3a1a;
+  min-height: 130px;
+  background: #060d06;
+  border: 1px solid #182a18;
   border-radius: 4px;
   color: var(--green);
   font-family: 'Courier New', Courier, monospace;
@@ -116,63 +168,79 @@ body {
   resize: vertical;
   outline: none;
   text-shadow: 0 0 4px #39ff1444;
+  caret-color: var(--green);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
-
 #project-input:focus {
   border-color: var(--green);
-  box-shadow: inset 0 0 20px #39ff1408, 0 0 10px #39ff1422;
+  box-shadow: inset 0 0 20px #39ff1408, 0 0 14px #39ff1422;
 }
+#project-input::placeholder { color: #1e4a1e; }
 
-#project-input::placeholder {
-  color: #1a5a1a;
+#char-counter {
+  font-size: 0.57rem;
+  color: #2a2a2a;
+  text-align: right;
+  margin-top: 5px;
+  letter-spacing: 1px;
 }
 
 /* ===== COIN BUTTON ===== */
 #coin-btn {
   display: block;
-  margin: 28px auto 0;
+  margin: 26px auto 0;
   background: transparent;
   border: 2px solid var(--magenta);
   color: var(--magenta);
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9rem;
   font-weight: bold;
-  letter-spacing: 3px;
-  padding: 14px 32px;
+  letter-spacing: 4px;
+  padding: 14px 36px;
   cursor: pointer;
   text-shadow: var(--glow-magenta);
   box-shadow: var(--glow-magenta), inset 0 0 20px #ff00ff11;
   transition: all 0.2s;
+  animation: coinPulse 2.5s ease-in-out infinite;
 }
-
+@keyframes coinPulse {
+  0%,100% { box-shadow: var(--glow-magenta), inset 0 0 20px #ff00ff11; }
+  50%      { box-shadow: 0 0 22px #ff00ff, 0 0 60px #ff00ff66, inset 0 0 30px #ff00ff22; }
+}
 #coin-btn:hover {
   background: #ff00ff18;
-  box-shadow: 0 0 16px #ff00ff, 0 0 40px #ff00ff66, inset 0 0 30px #ff00ff22;
+  box-shadow: 0 0 22px #ff00ff, 0 0 60px #ff00ff88, inset 0 0 30px #ff00ff22;
+  animation: none;
 }
-
-#coin-btn:active {
-  transform: scale(0.97);
-}
-
-#coin-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
+#coin-btn:active  { transform: scale(0.97); }
+#coin-btn:disabled { opacity: 0.28; cursor: not-allowed; animation: none; }
 
 /* ===== CRT TERMINAL ===== */
-#terminal-screen {
+#terminal-wrapper {
   display: none;
-  margin-top: 36px;
-  background: #020802;
-  border: 3px solid #0f2a0f;
-  border-radius: 18px;
-  padding: 30px 24px;
+  margin-top: 32px;
   position: relative;
+}
+
+/* outer CRT chassis */
+#terminal-frame {
+  background: #080e08;
+  border: 4px solid #0e220e;
+  border-radius: 26px;
+  padding: 5px;
   box-shadow:
-    inset 0 0 80px #39ff1409,
-    inset 0 0 200px #00000088,
-    0 0 30px #39ff1411;
+    0 0 0 1px #183a18,
+    0 0 50px #39ff1411,
+    inset 0 0 20px #000;
+}
+
+#terminal-screen {
+  background: #020802;
+  border-radius: 22px;
+  padding: 28px 22px;
+  position: relative;
   overflow: hidden;
+  min-height: 100px;
 }
 
 /* CRT curvature vignette */
@@ -180,32 +248,43 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 18px;
-  background: radial-gradient(ellipse at center, transparent 55%, #000000cc 100%);
+  border-radius: 22px;
+  background: radial-gradient(ellipse at center, transparent 48%, #000000e8 100%);
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
+}
+
+/* phosphor bloom */
+@keyframes phosphorPulse {
+  0%,100% { box-shadow: inset 0 0 80px #39ff1405; }
+  50%      { box-shadow: inset 0 0 80px #39ff1410; }
+}
+@keyframes flicker {
+  0%,93%,96%,100% { opacity: 1; }
+  94%  { opacity: 0.87; }
+  95%  { opacity: 0.94; }
+}
+#terminal-screen.scanning {
+  animation: phosphorPulse 2s ease-in-out infinite, flicker 6s infinite;
 }
 
 #scan-output {
   position: relative;
-  z-index: 2;
-  min-height: 60px;
+  z-index: 3;
+  min-height: 40px;
 }
-
 #scan-output .scan-line {
-  font-size: 0.78rem;
-  line-height: 1.8;
+  font-size: 0.8rem;
+  line-height: 1.9;
   color: var(--green);
   text-shadow: 0 0 6px #39ff1466;
   white-space: pre-wrap;
   word-break: break-word;
 }
-
 #scan-output .scan-line.warn {
-  color: #ffaa00;
+  color: var(--amber);
   text-shadow: 0 0 6px #ffaa0066;
 }
-
 #scan-output .scan-line.done {
   color: var(--cyan);
   text-shadow: var(--glow-cyan);
@@ -216,294 +295,340 @@ body {
   display: none;
   position: relative;
   width: 100%;
-  height: 180px;
-  margin-top: 20px;
+  height: 220px;
+  margin-top: 8px;
   overflow: hidden;
+}
+
+/* overhead track */
+#claw-track {
+  position: absolute;
+  top: 0;
+  left: 8%;
+  width: 84%;
+  height: 10px;
+  background: repeating-linear-gradient(
+    90deg,
+    #004444 0px, #004444 18px,
+    #002222 18px, #002222 28px
+  );
+  border-bottom: 2px solid var(--cyan);
+  box-shadow: 0 2px 10px #00ffff44;
 }
 
 #claw {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: -100px;
-  transition: top 1.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-#claw.drop {
-  top: 20px;
-}
-
-#claw.retract {
-  top: -100px;
-  transition: top 1.2s cubic-bezier(0.55, 0, 1, 0.45);
-}
-
-/* Claw arm */
-.claw-arm {
-  width: 4px;
-  height: 80px;
-  background: var(--cyan);
-  margin: 0 auto;
-  box-shadow: var(--glow-cyan);
-}
-
-/* Claw head */
-.claw-head {
-  display: flex;
-  justify-content: center;
-  gap: 0;
-}
-
-.claw-finger {
-  width: 20px;
-  height: 30px;
-  border: 3px solid var(--cyan);
-  border-top: none;
-  box-shadow: var(--glow-cyan);
-}
-
-.claw-finger.left {
-  border-radius: 0 0 0 12px;
-  border-right: none;
-  transform: rotate(-8deg);
-  transform-origin: top right;
-}
-
-.claw-finger.right {
-  border-radius: 0 0 12px 0;
-  border-left: none;
-  transform: rotate(8deg);
-  transform-origin: top left;
-}
-
-#claw.drop .claw-finger.left {
-  transform: rotate(-25deg);
-  transition: transform 0.4s 1.6s;
-}
-
-#claw.drop .claw-finger.right {
-  transform: rotate(25deg);
-  transition: transform 0.4s 1.6s;
-}
-
-#claw.retract .claw-finger.left {
-  transform: rotate(-4deg);
-  transition: transform 0.3s;
-}
-
-#claw.retract .claw-finger.right {
-  transform: rotate(4deg);
-  transition: transform 0.3s;
-}
-
-/* ===== RECEIPT ===== */
-#receipt {
-  display: none;
-  margin-top: 30px;
-  border: 2px solid;
-  border-radius: 6px;
-  padding: 28px 24px;
-  position: relative;
-}
-
-#receipt.doa {
-  border-color: #ff3333;
-  box-shadow: 0 0 20px #ff333344, inset 0 0 40px #ff333309;
-}
-
-#receipt.soulless {
-  border-color: #ffaa00;
-  box-shadow: 0 0 20px #ffaa0044, inset 0 0 40px #ffaa0009;
-}
-
-#receipt.laforce {
-  border-color: var(--magenta);
-  box-shadow: var(--glow-magenta), inset 0 0 40px #ff00ff09;
-}
-
-#receipt-header {
-  font-size: 1rem;
-  font-weight: bold;
-  letter-spacing: 2px;
-  margin-bottom: 18px;
-  line-height: 1.4;
-}
-
-.doa #receipt-header { color: #ff3333; text-shadow: 0 0 8px #ff3333; }
-.soulless #receipt-header { color: #ffaa00; text-shadow: 0 0 8px #ffaa00; }
-.laforce #receipt-header { color: var(--magenta); text-shadow: var(--glow-magenta); }
-
-#receipt-body {
-  font-size: 0.78rem;
-  line-height: 1.9;
-  color: #cccccc;
-  margin-bottom: 22px;
-}
-
-#receipt-action {
-  font-size: 0.72rem;
-  letter-spacing: 2px;
-  padding-top: 16px;
-  border-top: 1px solid #333;
-}
-
-.doa #receipt-action { color: #ff3333; }
-.soulless #receipt-action { color: #ffaa00; }
-.laforce #receipt-action { color: var(--cyan); text-shadow: var(--glow-cyan); }
-
-#receipt-label {
-  font-size: 0.6rem;
-  letter-spacing: 4px;
-  color: #555;
+  top: -170px;
+  transition: top 2s cubic-bezier(0.22,1,0.36,1);
   text-align: center;
-  margin-top: 22px;
+}
+#claw.drop { top: 10px; }
+#claw.retract {
+  top: -170px;
+  transition: top 1.4s cubic-bezier(0.55,0,1,0.45);
+}
+
+.claw-cable {
+  width: 3px;
+  height: 90px;
+  background: linear-gradient(to bottom, var(--cyan) 0%, #003333 100%);
+  margin: 0 auto;
+  box-shadow: 0 0 5px #00ffff66;
+}
+
+/* ASCII claw art */
+.claw-ascii {
+  font-size: 1rem;
+  line-height: 1.15;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  white-space: pre;
+  letter-spacing: 0;
+  display: block;
+}
+
+#claw.drop .claw-ascii {
+  animation: clawGrip 0.5s 1.9s ease-in-out forwards;
+}
+@keyframes clawGrip {
+  0%   { color: var(--cyan);    text-shadow: var(--glow-cyan); }
+  50%  { color: var(--magenta); text-shadow: var(--glow-magenta); transform: scaleX(0.85); }
+  100% { color: var(--cyan);    text-shadow: var(--glow-cyan); transform: scaleX(1); }
 }
 
 /* ===== SCORE BAR ===== */
 #score-bar-container {
   display: none;
-  margin-top: 20px;
-  text-align: center;
+  margin-top: 22px;
 }
-
+#score-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
 #score-label {
-  font-size: 0.65rem;
-  letter-spacing: 3px;
-  color: #666;
-  margin-bottom: 8px;
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  color: #444;
 }
-
+#score-value {
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  color: #555;
+}
 #score-bar {
   width: 100%;
-  height: 6px;
-  background: #111;
-  border-radius: 3px;
-  overflow: hidden;
+  height: 8px;
+  background: #0c0c0c;
+  border: 1px solid #1a1a1a;
+  border-radius: 4px;
+  overflow: visible;
+  position: relative;
 }
-
 #score-fill {
   height: 100%;
   width: 0%;
-  border-radius: 3px;
-  transition: width 1.5s ease-out;
+  border-radius: 4px;
+  transition: width 2s cubic-bezier(0.25,1,0.5,1);
+  position: relative;
+}
+#score-fill::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: inherit;
+}
+#score-fill.doa      { background: var(--red);     box-shadow: 0 0 12px var(--red); }
+#score-fill.doa::after      { background: var(--red);     box-shadow: 0 0 8px var(--red); }
+#score-fill.soulless { background: var(--amber);   box-shadow: 0 0 12px var(--amber); }
+#score-fill.soulless::after { background: var(--amber);   box-shadow: 0 0 8px var(--amber); }
+#score-fill.laforce  { background: var(--magenta); box-shadow: 0 0 12px var(--magenta); }
+#score-fill.laforce::after  { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+
+#score-thresholds {
+  position: relative;
+  height: 16px;
+  margin-top: 3px;
+}
+.threshold-mark {
+  position: absolute;
+  font-size: 0.48rem;
+  color: #2a2a2a;
+  transform: translateX(-50%);
+  letter-spacing: 0;
+}
+.threshold-mark::before { content: '|'; display: block; text-align: center; }
+
+/* ===== RECEIPT ===== */
+#receipt {
+  display: none;
+  margin-top: 26px;
+  border: 2px solid;
+  border-radius: 6px;
+  padding: 28px 24px;
+  position: relative;
+  animation: receiptAppear 0.5s ease-out;
+}
+@keyframes receiptAppear {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-#score-fill.doa { background: #ff3333; box-shadow: 0 0 10px #ff3333; }
-#score-fill.soulless { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
-#score-fill.laforce { background: var(--magenta); box-shadow: 0 0 10px #ff00ff; }
+/* corner markers */
+#receipt::before, #receipt::after {
+  font-size: 0.65rem;
+  position: absolute;
+  opacity: 0.4;
+}
+#receipt::before { content: '+'; top: 7px; left: 10px; }
+#receipt::after  { content: '+'; bottom: 7px; right: 10px; }
+
+#receipt.doa     { border-color: var(--red);     box-shadow: 0 0 22px #ff333344, inset 0 0 40px #ff333308; }
+#receipt.soulless{ border-color: var(--amber);   box-shadow: 0 0 22px #ffaa0044, inset 0 0 40px #ffaa0008; }
+#receipt.laforce { border-color: var(--magenta); box-shadow: var(--glow-magenta), inset 0 0 40px #ff00ff08; }
+
+#receipt-tier-label {
+  font-size: 0.58rem;
+  letter-spacing: 5px;
+  opacity: 0.65;
+  margin-bottom: 7px;
+}
+.doa     #receipt-tier-label { color: var(--red); }
+.soulless#receipt-tier-label { color: var(--amber); }
+.laforce #receipt-tier-label { color: var(--magenta); }
+
+#receipt-header {
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.doa      #receipt-header { color: var(--red);     text-shadow: 0 0 8px var(--red); }
+.soulless #receipt-header { color: var(--amber);   text-shadow: 0 0 8px var(--amber); }
+.laforce  #receipt-header { color: var(--magenta); text-shadow: var(--glow-magenta); }
+
+#receipt-body {
+  font-size: 0.8rem;
+  line-height: 2;
+  color: #bbbbbb;
+  margin-bottom: 22px;
+  border-left: 2px solid #282828;
+  padding-left: 14px;
+}
+
+#receipt-action {
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  padding-top: 16px;
+  border-top: 1px solid #222;
+  font-style: italic;
+}
+.doa      #receipt-action { color: var(--red); }
+.soulless #receipt-action { color: var(--amber); }
+.laforce  #receipt-action { color: var(--cyan); text-shadow: var(--glow-cyan); }
+
+#receipt-label {
+  font-size: 0.56rem;
+  letter-spacing: 4px;
+  color: #333;
+  text-align: center;
+  margin-top: 22px;
+  padding-top: 12px;
+  border-top: 1px dashed #1c1c1c;
+}
 
 /* ===== RESET BUTTON ===== */
 #reset-btn {
   display: none;
   margin: 30px auto 0;
   background: transparent;
-  border: 1px solid #333;
-  color: #555;
+  border: 1px solid #1e1e1e;
+  color: #3a3a3a;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 0.7rem;
-  letter-spacing: 3px;
+  font-size: 0.68rem;
+  letter-spacing: 4px;
   padding: 10px 24px;
   cursor: pointer;
   transition: all 0.2s;
 }
-
 #reset-btn:hover {
   border-color: var(--green);
   color: var(--green);
+  box-shadow: 0 0 8px #39ff1422;
 }
 
 /* ===== FOOTER ===== */
 #footer {
-  margin-top: 40px;
+  margin-top: 52px;
   text-align: center;
-  font-size: 0.55rem;
-  color: #2a2a2a;
-  letter-spacing: 2px;
-  line-height: 2;
-}
-
-/* ===== FLICKER ANIMATION ===== */
-@keyframes flicker {
-  0%, 97%, 100% { opacity: 1; }
-  98% { opacity: 0.85; }
-  99% { opacity: 0.92; }
-}
-
-#terminal-screen.active {
-  animation: flicker 4s infinite;
+  font-size: 0.5rem;
+  color: #1a1a1a;
+  letter-spacing: 3px;
+  line-height: 2.2;
 }
 
 /* ===== CURSOR BLINK ===== */
 .cursor {
   display: inline-block;
-  width: 8px;
+  width: 7px;
   height: 14px;
   background: var(--green);
   vertical-align: text-bottom;
-  animation: blink 0.7s step-end infinite;
+  box-shadow: 0 0 4px var(--green);
+  animation: blink 0.65s step-end infinite;
 }
-
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0; }
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
   #cabinet { padding: 12px; }
-  #terminal-screen { padding: 18px 14px; }
+  #terminal-screen { padding: 16px 12px; }
   #receipt { padding: 18px 14px; }
+  #coin-btn { letter-spacing: 2px; padding: 12px 20px; font-size: 0.8rem; }
 }
 </style>
 </head>
 <body>
 
 <div id="crt-overlay"></div>
+<div id="scan-beam"></div>
+<div id="screen-darken"></div>
+<div id="flash-overlay"></div>
 
 <div id="cabinet">
 
   <!-- TITLE -->
   <div id="title-screen">
     <h1>JEAN-CLAUDE<br>&amp; THE <span class="accent">LA FORCE</span> FIELD</h1>
-    <div class="subtitle">VOIGHT-KAMPFF FOR CORPORATE PROJECTS</div>
+    <div class="subtitle">VOIGHT-KAMPFF MACHINE FOR CORPORATE PROJECTS</div>
     <div class="tagline">ARCS KINEMATIC MANIFOLD v8.5 &mdash; PLASMA STATE DIAGNOSTICS</div>
   </div>
+
+  <hr class="divider">
 
   <!-- INPUT -->
   <div id="input-section">
     <label>SUBMIT PROJECT IDEA / SLACK THREAD / STARTUP PITCH</label>
     <textarea id="project-input" placeholder="Paste your project idea, Slack thread, or startup pitch here...&#10;&#10;The Claw sees all. The Claw judges all."></textarea>
+    <div id="char-counter">0 CHARS &mdash; 0 WORDS</div>
     <button id="coin-btn">[ INSERT COIN / TEST VITALITY ]</button>
   </div>
 
   <!-- TERMINAL -->
-  <div id="terminal-screen">
-    <div id="scan-output"></div>
+  <div id="terminal-wrapper">
+    <div id="terminal-frame">
+      <div id="terminal-screen">
+        <div id="scan-output"></div>
+      </div>
+    </div>
   </div>
 
   <!-- CLAW -->
   <div id="claw-container">
+    <div id="claw-track"></div>
     <div id="claw">
-      <div class="claw-arm"></div>
-      <div class="claw-head">
-        <div class="claw-finger left"></div>
-        <div class="claw-finger right"></div>
-      </div>
+      <div class="claw-cable"></div>
+      <pre class="claw-ascii">  _[_]_
+ / === \
+|  | |  |
+ \_| |_/
+  /   \
+ / \_/ \</pre>
     </div>
   </div>
 
   <!-- SCORE BAR -->
   <div id="score-bar-container">
-    <div id="score-label">LA FORCE INDEX</div>
-    <div id="score-bar"><div id="score-fill"></div></div>
+    <div id="score-header">
+      <span id="score-label">LA FORCE INDEX</span>
+      <span id="score-value">0.0000</span>
+    </div>
+    <div id="score-bar">
+      <div id="score-fill"></div>
+    </div>
+    <div id="score-thresholds">
+      <span class="threshold-mark" style="left:40%">0.40</span>
+      <span class="threshold-mark" style="left:85%">0.85</span>
+    </div>
   </div>
 
   <!-- RECEIPT -->
   <div id="receipt">
+    <div id="receipt-tier-label"></div>
     <div id="receipt-header"></div>
     <div id="receipt-body"></div>
     <div id="receipt-action"></div>
-    <div id="receipt-label">COHERENCE RECEIPT &mdash; JEAN-CLAUDE DIAGNOSTICS</div>
+    <div id="receipt-label">COHERENCE RECEIPT &mdash; JEAN-CLAUDE DIAGNOSTICS &mdash; FLASHES OF BRILLIANCE</div>
   </div>
 
   <!-- RESET -->
@@ -512,116 +637,158 @@ body {
   <!-- FOOTER -->
   <div id="footer">
     ARCS DECISION RECEIPTS &bull; FLASHES OF BRILLIANCE<br>
-    &copy; 2026 &mdash; THE CLAW REMEMBERS
+    &copy; 2026 &mdash; THE CLAW REMEMBERS &mdash; PLASMA STATE (COHERENCE 1.0)
   </div>
 
 </div>
 
 <script>
-(function() {
+(function () {
   'use strict';
 
+  // ─── WEB AUDIO ───────────────────────────────────────────────────────────────
+  let audioCtx = null;
+
+  function getAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { return null; }
+    }
+    return audioCtx;
+  }
+
+  function beep(freq, duration, type, gain) {
+    const ctx = getAudio();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.type = type || 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      g.gain.setValueAtTime(gain || 0.05, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function typeBeep()     { beep(700 + Math.random() * 300, 0.04, 'square', 0.035); }
+  function scanLineBeep(i){ const f=[220,330,440,280,380,260,180,520]; beep(f[i%f.length], 0.14, 'sawtooth', 0.045); }
+  function warnBeep()     { beep(220, 0.18, 'sawtooth', 0.07); setTimeout(() => beep(180, 0.28, 'sawtooth', 0.055), 220); }
+  function clawDropBeep() { beep(80,  0.10, 'sawtooth', 0.11); setTimeout(() => beep(120, 0.08, 'square', 0.07), 110); }
+
+  function clawGrabBeep(tier) {
+    if (tier === 'laforce') {
+      beep(1760, 0.1, 'sine', 0.07);
+      setTimeout(() => beep(2200, 0.15, 'sine', 0.05), 110);
+    } else if (tier === 'doa') {
+      beep(110, 0.3, 'sawtooth', 0.09);
+    } else {
+      beep(440, 0.2, 'triangle', 0.055);
+    }
+  }
+
+  function revealBeep(tier) {
+    if (tier === 'doa') {
+      [440,330,220,165].forEach((f,i) => setTimeout(() => beep(f, 0.55, 'sawtooth', 0.055), i * 80));
+    } else if (tier === 'soulless') {
+      beep(440, 0.4, 'triangle', 0.055);
+      setTimeout(() => beep(440, 0.35, 'triangle', 0.035), 320);
+    } else {
+      [330,440,550,660,880].forEach((f,i) => setTimeout(() => beep(f, 0.3, 'square', 0.055), i * 90));
+    }
+  }
+
+  // ─── DATA ─────────────────────────────────────────────────────────────────────
   const SCAN_LINES = [
-    { text: 'INITIALIZING KINEMATIC MANIFOLD...', cls: '' },
-    { text: 'PINGING GROK FOR REAL-TIME FIELD SENTIMENT...', cls: '' },
-    { text: 'CALCULATING TELIC SIGNAL SCORE...', cls: '' },
-    { text: 'CHECKING FOR ATRIAL FIBRILLATION (AFIB)...', cls: 'warn' },
-    { text: 'SCANNING FOR \u00c9LAN VITAL...', cls: '' },
-    { text: 'MEASURING DEAD LOAD ACCUMULATION...', cls: '' },
-    { text: 'WARNING: DIESEL RUNAWAY SCANNERS ACTIVE...', cls: 'warn' },
-    { text: 'ASSESSING LA FORCE INDEX...', cls: 'done' }
+    { text: 'INITIALIZING KINEMATIC MANIFOLD...',          cls: ''     },
+    { text: 'PINGING GROK FOR REAL-TIME FIELD SENTIMENT...', cls: ''   },
+    { text: 'CALCULATING TELIC SIGNAL SCORE...',           cls: ''     },
+    { text: 'CHECKING FOR ATRIAL FIBRILLATION (AFIB)...',  cls: 'warn' },
+    { text: 'SCANNING FOR \u00c9LAN VITAL...',             cls: ''     },
+    { text: 'MEASURING DEAD LOAD ACCUMULATION...',         cls: ''     },
+    { text: 'WARNING: DIESEL RUNAWAY SCANNERS ACTIVE...',  cls: 'warn' },
+    { text: 'ASSESSING LA FORCE INDEX...',                 cls: 'done' }
   ];
 
   const OUTCOMES = {
     doa: {
+      tier:   'D.O.A.',
       header: 'CORPSE DETECTED: PURE STOCHASTIC STUMBLING',
-      body: 'Non. You are running from pain. There is no magnetic north here, only the fear of stopping. The velocity is high, but the coherence is zero. You are in Diesel Runaway, burning sunk cost to stay warm. The Claw grabs nothing. Fatality.',
+      body:   'Non. You are running from pain. There is no magnetic north here, only the fear of stopping. The velocity is high, but the coherence is zero. You are in Diesel Runaway, burning sunk cost to stay warm. The Claw grabs nothing. Fatality.',
       action: 'MANDATORY PLI\u00c9. Stop moving. Find the Telos or bury the project.'
     },
     soulless: {
+      tier:   'SOULLESS COMPETENCE',
       header: 'FUNCTIONAL, BUT DEAD.',
-      body: 'It is not wrong. But it is not alive. You have optimized for zero friction, and therefore generated zero heat. The structure is unhardened. \u00c9lan Dusk would execute this, but Jean-Claude weeps. The Claw retrieves a beige cube.',
+      body:   'It is not wrong. But it is not alive. You have optimized for zero friction, and therefore generated zero heat. The structure is unhardened. \u00c9lan Dusk would execute this, but Jean-Claude weeps. The Claw retrieves a beige cube.',
       action: 'Introduce live load. Go stand barefoot in 31-degree wind.'
     },
     laforce: {
+      tier:   'LA FORCE',
       header: 'COHERENCE 1.0: THE UNIFIED FIELD',
-      body: 'Oui. The structure is hardened. The yield is perfect. The sentence is completing itself. The Invisible Hand is pulling. You are running Anti-Stochastic Gradient Ascent. The Claw touches the project and melts into the void.',
+      body:   'Oui. The structure is hardened. The yield is perfect. The sentence is completing itself. The Invisible Hand is pulling. You are running Anti-Stochastic Gradient Ascent. The Claw touches the project and melts into the void.',
       action: 'Your wish is granted. But you are not ready for it. Do not interrupt the flow. The void has been notified.'
     }
   };
 
-  const $ = (sel) => document.querySelector(sel);
+  // ─── UTILS ────────────────────────────────────────────────────────────────────
+  const $ = sel => document.querySelector(sel);
 
-  // Shannon entropy of a string
   function entropy(str) {
     if (!str.length) return 0;
     const freq = {};
     for (const ch of str) freq[ch] = (freq[ch] || 0) + 1;
     const len = str.length;
     let h = 0;
-    for (const ch in freq) {
-      const p = freq[ch] / len;
-      h -= p * Math.log2(p);
-    }
+    for (const ch in freq) { const p = freq[ch] / len; h -= p * Math.log2(p); }
     return h;
   }
 
-  // Simple hash to add deterministic noise
   function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-    }
-    return Math.abs(hash);
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    return Math.abs(h);
   }
 
-  // Calculate vitality score [0, 1]
   function calculateScore(input) {
-    const trimmed = input.trim();
-    if (!trimmed.length) return 0;
-
-    const len = trimmed.length;
-    const words = trimmed.split(/\s+/).filter(Boolean).length;
-    const uniqueWords = new Set(trimmed.toLowerCase().split(/\s+/).filter(Boolean)).size;
-    const e = entropy(trimmed);
-    const hash = simpleHash(trimmed);
-
-    // Length factor: rewards longer inputs, diminishing returns
-    const lenFactor = Math.min(len / 500, 1);
-
-    // Word diversity factor
-    const diversityFactor = words > 0 ? uniqueWords / words : 0;
-
-    // Entropy factor: normalized (max realistic entropy ~5 bits for English text)
-    const entropyFactor = Math.min(e / 5, 1);
-
-    // Hash jitter: small deterministic noise +-0.08
-    const jitter = ((hash % 160) - 80) / 1000;
-
-    const raw = (lenFactor * 0.35) + (diversityFactor * 0.25) + (entropyFactor * 0.35) + jitter + 0.05;
-
+    const t = input.trim();
+    if (!t.length) return 0;
+    const len    = t.length;
+    const words  = t.split(/\s+/).filter(Boolean);
+    const unique = new Set(t.toLowerCase().split(/\s+/).filter(Boolean)).size;
+    const e      = entropy(t);
+    const jitter = ((simpleHash(t) % 160) - 80) / 1000;
+    const raw =
+      Math.min(len / 500, 1)        * 0.35 +
+      (words.length ? unique / words.length : 0) * 0.25 +
+      Math.min(e / 5, 1)             * 0.35 +
+      jitter + 0.05;
     return Math.max(0, Math.min(1, raw));
   }
 
   function classify(score) {
-    if (score < 0.4) return 'doa';
+    if (score < 0.4)  return 'doa';
     if (score > 0.85) return 'laforce';
     return 'soulless';
   }
 
-  // Type text character by character
-  function typeText(element, text, charDelay) {
-    return new Promise((resolve) => {
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ─── TYPE TEXT ────────────────────────────────────────────────────────────────
+  function typeText(el, text, delay) {
+    return new Promise(resolve => {
       let i = 0;
       const cursor = document.createElement('span');
       cursor.className = 'cursor';
-      element.appendChild(cursor);
-
+      el.appendChild(cursor);
       function tick() {
         if (i < text.length) {
-          cursor.before(document.createTextNode(text[i]));
-          i++;
-          setTimeout(tick, charDelay);
+          cursor.before(document.createTextNode(text[i++]));
+          if (i % 3 === 0) typeBeep();
+          setTimeout(tick, delay + Math.random() * 12);
         } else {
           cursor.remove();
           resolve();
@@ -631,111 +798,121 @@ body {
     });
   }
 
-  // Print a scan line with typing effect
-  async function printScanLine(text, cls) {
+  async function printScanLine(text, cls, idx) {
     const output = $('#scan-output');
-    const line = document.createElement('div');
+    const line   = document.createElement('div');
     line.className = 'scan-line' + (cls ? ' ' + cls : '');
     output.appendChild(line);
-    await typeText(line, '> ' + text, 30);
-    // Scroll terminal
-    const terminal = $('#terminal-screen');
-    terminal.scrollTop = terminal.scrollHeight;
+    if (cls === 'warn') warnBeep();
+    else if (idx !== undefined) scanLineBeep(idx);
+    await typeText(line, '> ' + text, 26);
+    $('#terminal-screen').scrollTop = 999999;
   }
 
-  function sleep(ms) {
-    return new Promise((r) => setTimeout(r, ms));
-  }
-
-  // Drop the claw
-  async function dropClaw() {
+  // ─── CLAW ─────────────────────────────────────────────────────────────────────
+  async function dropClaw(tier) {
     const container = $('#claw-container');
-    const claw = $('#claw');
+    const claw      = $('#claw');
     container.style.display = 'block';
     claw.className = '';
-
-    await sleep(100);
+    clawDropBeep();
+    await sleep(80);
     claw.classList.add('drop');
-    await sleep(2200);
+    await sleep(2100);
+    clawGrabBeep(tier);
+    await sleep(900);
     claw.classList.remove('drop');
     claw.classList.add('retract');
-    await sleep(1400);
+    await sleep(1500);
   }
 
-  // Show result receipt
+  // ─── FLASH ────────────────────────────────────────────────────────────────────
+  function flashScreen() {
+    const f = $('#flash-overlay');
+    f.classList.remove('flash');
+    void f.offsetWidth;
+    f.classList.add('flash');
+    setTimeout(() => f.classList.remove('flash'), 750);
+  }
+
+  // ─── RECEIPT ─────────────────────────────────────────────────────────────────
   function showReceipt(score, tier) {
-    const outcome = OUTCOMES[tier];
-    const receipt = $('#receipt');
-    const scoreFill = $('#score-fill');
-
-    receipt.className = tier;
-    receipt.style.display = 'block';
-    $('#receipt-header').textContent = outcome.header;
-    $('#receipt-body').textContent = outcome.body;
-    $('#receipt-action').textContent = '> ' + outcome.action;
-
-    // Score bar
+    const o = OUTCOMES[tier];
+    const r = $('#receipt');
+    r.className            = tier;
+    r.style.display        = 'block';
+    $('#receipt-tier-label').textContent = ':: ' + o.tier + ' ::';
+    $('#receipt-header').textContent     = o.header;
+    $('#receipt-body').textContent       = o.body;
+    $('#receipt-action').textContent     = '>> ' + o.action;
+    $('#score-value').textContent        = score.toFixed(4);
     $('#score-bar-container').style.display = 'block';
-    scoreFill.className = tier;
-    requestAnimationFrame(() => {
-      scoreFill.style.width = Math.round(score * 100) + '%';
-    });
-
+    const fill = $('#score-fill');
+    fill.className = tier;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fill.style.width = Math.round(score * 100) + '%';
+    }));
     $('#reset-btn').style.display = 'block';
+    flashScreen();
+    revealBeep(tier);
   }
 
-  // Main sequence
+  // ─── MAIN SEQUENCE ────────────────────────────────────────────────────────────
   async function runScan() {
     const input = $('#project-input').value;
-    if (!input.trim()) return;
+    if (!input.trim()) { $('#project-input').focus(); return; }
+
+    // Unlock audio (autoplay policy)
+    const ctx = getAudio();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
 
     const btn = $('#coin-btn');
-    btn.disabled = true;
+    btn.disabled   = true;
+    btn.textContent = '[ SCANNING... ]';
 
-    // Show terminal
+    $('#screen-darken').classList.add('active');
+
+    const wrapper  = $('#terminal-wrapper');
     const terminal = $('#terminal-screen');
-    terminal.style.display = 'block';
-    terminal.classList.add('active');
+    wrapper.style.display = 'block';
+    terminal.classList.add('scanning');
     $('#scan-output').innerHTML = '';
 
-    // Fade input section
-    $('#input-section').style.opacity = '0.3';
-    $('#input-section').style.pointerEvents = 'none';
+    const inputSec = $('#input-section');
+    inputSec.style.opacity       = '0.22';
+    inputSec.style.pointerEvents = 'none';
 
-    // Run scan lines
-    for (const line of SCAN_LINES) {
-      await printScanLine(line.text, line.cls);
-      await sleep(400 + Math.random() * 300);
+    await sleep(350);
+
+    for (let i = 0; i < SCAN_LINES.length; i++) {
+      const l = SCAN_LINES[i];
+      await printScanLine(l.text, l.cls, i);
+      await sleep(360 + Math.random() * 240);
     }
 
-    // Final pause
-    await sleep(600);
+    await sleep(480);
 
     const score = calculateScore(input);
-    const tier = classify(score);
+    const tier  = classify(score);
 
-    // Print score
-    const scoreText = 'LA FORCE INDEX: ' + score.toFixed(4);
-    await printScanLine(scoreText, 'done');
-    await sleep(500);
+    await printScanLine('LA FORCE INDEX: ' + score.toFixed(4), 'done');
+    await sleep(380);
 
-    const verdictText = 'VERDICT: ' + tier.toUpperCase().replace('DOA', 'D.O.A.').replace('SOULLESS', 'SOULLESS COMPETENCE').replace('LAFORCE', 'LA FORCE');
-    await printScanLine(verdictText, 'done');
-    await sleep(800);
+    const labels = { doa: 'D.O.A.', soulless: 'SOULLESS COMPETENCE', laforce: 'LA FORCE' };
+    await printScanLine('VERDICT: ' + labels[tier], 'done');
+    await sleep(650);
 
-    // Drop claw
-    await dropClaw();
+    terminal.classList.remove('scanning');
+    $('#screen-darken').classList.remove('active');
 
-    // Show receipt
+    await dropClaw(tier);
     showReceipt(score, tier);
-
-    terminal.classList.remove('active');
   }
 
-  // Reset
+  // ─── RESET ────────────────────────────────────────────────────────────────────
   function resetMachine() {
-    $('#terminal-screen').style.display = 'none';
-    $('#terminal-screen').classList.remove('active');
+    $('#terminal-wrapper').style.display = 'none';
+    $('#terminal-screen').classList.remove('scanning');
     $('#scan-output').innerHTML = '';
     $('#claw-container').style.display = 'none';
     $('#claw').className = '';
@@ -744,24 +921,42 @@ body {
     $('#score-bar-container').style.display = 'none';
     $('#score-fill').style.width = '0%';
     $('#reset-btn').style.display = 'none';
-    $('#input-section').style.opacity = '1';
-    $('#input-section').style.pointerEvents = 'auto';
-    $('#coin-btn').disabled = false;
+    $('#screen-darken').classList.remove('active');
+    const i = $('#input-section');
+    i.style.opacity = '1';
+    i.style.pointerEvents = 'auto';
+    const btn = $('#coin-btn');
+    btn.disabled = false;
+    btn.textContent = '[ INSERT COIN / TEST VITALITY ]';
     $('#project-input').value = '';
+    $('#char-counter').textContent = '0 CHARS \u2014 0 WORDS';
     $('#project-input').focus();
   }
 
-  // Bind events
+  // ─── EVENTS ───────────────────────────────────────────────────────────────────
   $('#coin-btn').addEventListener('click', runScan);
   $('#reset-btn').addEventListener('click', resetMachine);
 
-  // Allow Ctrl+Enter to submit
-  $('#project-input').addEventListener('keydown', function(e) {
+  $('#project-input').addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (!$('#coin-btn').disabled) runScan();
     }
   });
+
+  $('#project-input').addEventListener('input', function () {
+    const v     = this.value;
+    const chars = v.length;
+    const words = v.trim() ? v.trim().split(/\s+/).length : 0;
+    $('#char-counter').textContent = chars + ' CHARS \u2014 ' + words + ' WORDS';
+  });
+
+  // Unlock audio on first user gesture
+  document.addEventListener('click', function unlock() {
+    const c = getAudio();
+    if (c && c.state === 'suspended') c.resume();
+    document.removeEventListener('click', unlock);
+  }, { once: true });
 
 })();
 </script>
