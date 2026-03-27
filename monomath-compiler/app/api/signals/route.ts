@@ -5,7 +5,7 @@
  * POST /api/signals         → tag / annotate a signal (links output + tags)
  */
 
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabase";
 
 export async function GET() {
   const { data, error } = await supabase

@@ -10,7 +10,7 @@
  * n8n can also POST its own processed payload directly.
  */
 
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabase";
 import type { TallyWebhookPayload } from "@/lib/types";
 
 export async function POST(request: Request) {
