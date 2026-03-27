@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+/* ── MONOMATH COMPILER ── VISUAL DYSON SPHERE ── */
+
+@theme inline {
+  --color-background: #050505;
+  --color-foreground: #e0e0e0;
+  --color-cyan: #00F0FF;
+  --color-amber: #FFD700;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+}
+
+/* ── BASE ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: #050505;
+  color: #e0e0e0;
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  overflow: hidden;
+}
+
+/* ── HEXAGONAL GRID BACKGROUND ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-2.4L54 49.2V19.8L28 4.4 2 19.8v29.4L28 63.6z' fill='none' stroke='%2300F0FF' stroke-opacity='0.04' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 56px 100px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── TERMINAL CARD: 1px border + corner brackets ── */
+.terminal-card {
+  position: relative;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.terminal-card::before,
+.terminal-card::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #00F0FF;
+  border-style: solid;
+  opacity: 0.6;
+}
+
+/* top-left corner */
+.terminal-card::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+/* bottom-right corner */
+.terminal-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ── GLASSMORPHISM: Dyson Core ── */
+.glass {
+  background: rgba(0, 240, 255, 0.025);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.12);
+}
+
+/* ── PLIE STATE: processing — slow 3s border pulse ── */
+@keyframes plie-pulse {
+  0%,
+  100% {
+    border-color: rgba(0, 240, 255, 0.08);
+    box-shadow: none;
+  }
+  50% {
+    border-color: rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.1), inset 0 0 30px rgba(0, 240, 255, 0.03);
+  }
+}
+
+.plie {
+  animation: plie-pulse 2.8s ease-in-out infinite;
+}
+
+/* ── ELEVE STATE: committed — sharp 900ms cyan flash ── */
+@keyframes eleve-flash {
+  0% {
+    box-shadow: none;
+    border-color: rgba(0, 240, 255, 0.12);
+  }
+  12% {
+    box-shadow: 0 0 50px rgba(0, 240, 255, 0.7), inset 0 0 25px rgba(0, 240, 255, 0.1);
+    border-color: #00F0FF;
+  }
+  100% {
+    box-shadow: none;
+    border-color: rgba(0, 240, 255, 0.12);
+  }
+}
+
+.eleve {
+  animation: eleve-flash 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── DIMENSION CARD ACCENTS ── */
+.dim-strategy {
+  border-color: rgba(255, 215, 0, 0.35) !important;
+}
+.dim-design {
+  border-color: rgba(0, 240, 255, 0.35) !important;
+}
+.dim-copy {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+.dim-code {
+  border-color: rgba(0, 240, 255, 0.35) !important;
+}
+
+.dim-strategy .dim-label { color: #FFD700; }
+.dim-design   .dim-label { color: #00F0FF; }
+.dim-copy     .dim-label { color: rgba(255, 255, 255, 0.45); }
+.dim-code     .dim-label { color: #00F0FF; }
+
+/* ── SIGNAL WATERFALL ENTRY ANIMATION ── */
+@keyframes signal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signal-entry {
+  animation: signal-in 0.25s ease-out forwards;
+}
+
+/* ── BLINK CURSOR ── */
+@keyframes blink {
+  0%,
+  100% { opacity: 1; }
+  50%  { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: "▮";
+  color: #00F0FF;
+  animation: blink 1s step-start infinite;
+  margin-left: 2px;
+}
+
+/* ── CUSTOM SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.18);
+  border-radius: 2px;
+}
