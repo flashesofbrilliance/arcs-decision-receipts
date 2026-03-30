@@ -1,0 +1,192 @@
+{
+  "_meta": {
+    "name": "Monomath Compiler — Kinematic Manifold",
+    "description": "Catches Tally webhook → classifies intent → refracts via Claude API → pushes to Supabase",
+    "version": "1.0.0",
+    "stack": ["Tally", "n8n", "Anthropic claude-sonnet-4-6", "Supabase"],
+    "import_instructions": "In n8n: New Workflow → ⋮ → Import from JSON → paste this file. Then set your credentials for Anthropic API and Supabase."
+  },
+  "name": "Monomath Compiler — Kinematic Manifold",
+  "nodes": [
+    {
+      "id": "node_webhook",
+      "name": "Tally Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monomath-tally",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "notes": "Configure Tally form to POST to: https://your-n8n-instance.com/webhook/monomath-tally"
+    },
+    {
+      "id": "node_extract",
+      "name": "Extract Raw Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "// Extract all text field values from Tally submission\nconst payload = $input.first().json;\nconst fields = payload?.data?.fields ?? [];\n\nconst rawText = fields\n  .map(f => {\n    if (typeof f.value === 'string') return f.value.trim();\n    if (Array.isArray(f.value)) return f.value.join(', ');\n    return '';\n  })\n  .filter(Boolean)\n  .join('\\n\\n');\n\nconst submissionId = payload?.data?.submissionId ?? 'unknown';\nconst formId = payload?.data?.formId ?? 'unknown';\n\nreturn [{\n  json: {\n    raw_text: rawText,\n    submission_id: submissionId,\n    form_id: formId,\n    char_count: rawText.length,\n    received_at: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "node_classify",
+      "name": "Classify Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "// Heuristic classifier — routes to appropriate refraction prompt\nconst text = $input.first().json.raw_text.toLowerCase();\n\nconst PROBLEM_SIGNALS = ['problem', 'issue', 'bug', 'broken', 'fails', 'blocked', 'stuck', 'cant', \"can't\", 'struggling'];\nconst DECISION_SIGNALS = ['decide', 'decision', 'choose', 'choice', 'option', 'should i', 'or should', 'trade-off', 'vs', 'versus'];\nconst IDEA_SIGNALS = ['idea', 'concept', 'what if', 'imagine', 'hypothesis', 'explore', 'experiment'];\n\nconst score = (signals) => signals.filter(s => text.includes(s)).length;\n\nconst scores = {\n  problem: score(PROBLEM_SIGNALS),\n  decision: score(DECISION_SIGNALS),\n  idea: score(IDEA_SIGNALS)\n};\n\nconst intent = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    intent,\n    intent_scores: scores\n  }\n}];"
+      }
+    },
+    {
+      "id": "node_insert_signal",
+      "name": "Insert Raw Signal",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "raw_signals",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "raw_text", "fieldValue": "={{ $json.raw_text }}" },
+            { "fieldId": "source", "fieldValue": "tally" },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ JSON.stringify({ submission_id: $json.submission_id, form_id: $json.form_id, intent: $json.intent }) }}"
+            }
+          ]
+        },
+        "additionalOptions": { "select": "*" }
+      },
+      "notes": "Requires Supabase credential with service_role key"
+    },
+    {
+      "id": "node_claude",
+      "name": "Claude API — Refract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $credentials.httpHeaderAuth.value }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-sonnet-4-6",
+          "max_tokens": 1200,
+          "system": "You are the Monomath Compiler — a cognitive refraction engine. You take raw, unstructured brain-dumps and split them into 4 precise dimensions. Return ONLY valid JSON, no prose, no markdown fences.\n\nFormat:\n{\n  \"strategy\": \"...\",\n  \"design\": \"...\",\n  \"copy\": \"...\",\n  \"code\": \"...\"\n}\n\nRules:\n- STRATEGY: The highest-leverage move. One sentence on the key constraint to remove or the single most important decision.\n- DESIGN: The user experience or interface implication. What should a person see, feel, or do?\n- COPY: The one sentence that communicates the value to an outsider. Lead with outcome, name the enemy.\n- CODE: A minimal code snippet or pseudocode that captures the core technical pattern implied by this thought. If not applicable, write a comment explaining why.\n\nPreserve the person's specific lexicon. Do not regress to generic corporate language.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "={{ 'INTENT: ' + $('Classify Intent').item.json.intent.toUpperCase() + '\\n\\nRAW INPUT:\\n' + $('Classify Intent').item.json.raw_text }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "anthropic-api-key",
+          "name": "Anthropic API Key"
+        }
+      },
+      "notes": "Create an 'HTTP Header Auth' credential named 'Anthropic API Key' with header 'x-api-key' and your Anthropic key as value."
+    },
+    {
+      "id": "node_parse_refraction",
+      "name": "Parse Refraction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "parameters": {
+        "jsCode": "const claudeResponse = $input.first().json;\nconst content = claudeResponse?.content?.[0]?.text ?? '{}';\n\nlet refraction;\ntry {\n  refraction = JSON.parse(content);\n} catch (e) {\n  // Fallback: extract JSON from text if wrapped in prose\n  const match = content.match(/\\{[\\s\\S]*\\}/);\n  refraction = match ? JSON.parse(match[0]) : { strategy: content, design: '', copy: '', code: '' };\n}\n\nconst signalId = $('Insert Raw Signal').item.json.id;\n\nreturn [{\n  json: {\n    signal_id: signalId,\n    strategy: refraction.strategy ?? '',\n    design: refraction.design ?? '',\n    copy: refraction.copy ?? '',\n    code: refraction.code ?? '',\n    full_output: claudeResponse,\n    raw_text: $('Classify Intent').item.json.raw_text\n  }\n}];"
+      }
+    },
+    {
+      "id": "node_insert_output",
+      "name": "Insert Refracted Output",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "refracted_outputs",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "signal_id", "fieldValue": "={{ $json.signal_id }}" },
+            { "fieldId": "strategy", "fieldValue": "={{ $json.strategy }}" },
+            { "fieldId": "design", "fieldValue": "={{ $json.design }}" },
+            { "fieldId": "copy", "fieldValue": "={{ $json.copy }}" },
+            { "fieldId": "code", "fieldValue": "={{ $json.code }}" },
+            { "fieldId": "full_output", "fieldValue": "={{ JSON.stringify($json.full_output) }}" }
+          ]
+        },
+        "additionalOptions": { "select": "id" }
+      }
+    },
+    {
+      "id": "node_log",
+      "name": "Log Event",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "parameters": {
+        "operation": "insert",
+        "tableId": "system_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "event_type", "fieldValue": "signal_compiled" },
+            {
+              "fieldId": "payload",
+              "fieldValue": "={{ JSON.stringify({ signal_id: $('Parse Refraction').item.json.signal_id, output_id: $json.id, intent: $('Classify Intent').item.json.intent }) }}"
+            },
+            { "fieldId": "status", "fieldValue": "ok" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node_respond",
+      "name": "Respond to Tally",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, signal_id: $('Parse Refraction').item.json.signal_id, intent: $('Classify Intent').item.json.intent }) }}",
+        "options": { "responseCode": 201 }
+      }
+    }
+  ],
+  "connections": {
+    "Tally Webhook":           { "main": [[{ "node": "Extract Raw Text",       "type": "main", "index": 0 }]] },
+    "Extract Raw Text":        { "main": [[{ "node": "Classify Intent",         "type": "main", "index": 0 }]] },
+    "Classify Intent":         { "main": [[{ "node": "Insert Raw Signal",        "type": "main", "index": 0 }]] },
+    "Insert Raw Signal":       { "main": [[{ "node": "Claude API — Refract",     "type": "main", "index": 0 }]] },
+    "Claude API — Refract":    { "main": [[{ "node": "Parse Refraction",         "type": "main", "index": 0 }]] },
+    "Parse Refraction":        { "main": [[{ "node": "Insert Refracted Output",  "type": "main", "index": 0 }]] },
+    "Insert Refracted Output": { "main": [[{ "node": "Log Event",                "type": "main", "index": 0 }]] },
+    "Log Event":               { "main": [[{ "node": "Respond to Tally",         "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromAList"
+  },
+  "staticData": null,
+  "tags": ["monomath", "arcs", "tally", "claude", "supabase"]
+}
